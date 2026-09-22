@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KEBUN PINTAR — Simulator Pertanian & Peternakan Interaktif</title>
+    <meta name="description" content="Project Edukasi Sekolah: Simulator Berkebun & Peternakan 3D dengan Three.js dan AI Dokter Tanaman berbasis Teachable Machine / Computer Vision.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- ====================================================================
+         1. HOME SCREEN (BERANDA UTAMA)
+         ==================================================================== -->
+    <main id="homeScreen">
+        <!-- Baris Atas Home -->
+        <header class="home-topbar">
+            <div class="school-badge">
+                <span>🏫</span> Proyek Sekolah • Biologi & Agroteknologi Pintar
+            </div>
+            <button class="sound-toggle-btn" onclick="window.toggleSound()" title="Nyalakan/Matikan Suara">
+                🔊
+            </button>
+        </header>
+
+        <!-- Hero Judul Utama -->
+        <section class="home-hero">
+            <h1 class="home-title">🌱 KEBUN PINTAR</h1>
+            <p class="home-subtitle">Simulator Pertanian & Peternakan Interaktif</p>
+        </section>
+
+        <!-- 4 Kartu Menu Utama -->
+        <nav class="menu-grid" aria-label="Menu Utama">
+            <!-- 1. AI Dokter Tanaman -->
+            <div class="menu-card" onclick="window.openPanel('aiPanel')">
+                <span class="menu-card-icon">🤖</span>
+                <h3 class="menu-card-title">Dokter Tanaman</h3>
+                <p class="menu-card-desc">Deteksi kesehatan daun & identifikasi penyakit dengan analisis visual computer vision.</p>
+                <span class="menu-card-tag" style="background:#0288d1;">Vision AI</span>
+            </div>
+
+            <!-- 2. Belajar Tanaman -->
+            <div class="menu-card" onclick="window.openPanel('learnPanel')">
+                <span class="menu-card-icon">📚</span>
+                <h3 class="menu-card-title">Belajar Tanaman</h3>
+                <p class="menu-card-desc">Pelajari 36 modul sains botani, perawatan, hama, jenis tanaman, serta kuis interaktif.</p>
+                <span class="menu-card-tag" style="background:#7b1fa2;">Edukasi & Kuis</span>
+            </div>
+
+            <!-- 3. Mulai Bermain (Game 3D Three.js) -->
+            <div class="menu-card primary-play" onclick="window.showGame()">
+                <span class="menu-card-icon">🎮</span>
+                <h3 class="menu-card-title">Mulai Bermain</h3>
+                <p class="menu-card-desc">Jelajahi 11 zona dunia 3D luas: kebun, peternakan hewan, rumah, pasar, desa, dan festival!</p>
+                <span class="menu-card-tag" style="background:#fbc02d; color:#212121;">3D Three.js</span>
+            </div>
+
+            <!-- 4. Jadwal Perawatan -->
+            <div class="menu-card" onclick="window.openPanel('schedulePanel')">
+                <span class="menu-card-icon">📅</span>
+                <h3 class="menu-card-title">Jadwal Perawatan</h3>
+                <p class="menu-card-desc">Atur agenda penyiraman, pemupukan berkala, dan jadwal perawatan kebun sekolah.</p>
+                <span class="menu-card-tag" style="background:#e65100;">Agenda Kebun</span>
+            </div>
+        </nav>
+
+        <!-- Footer -->
+        <footer class="home-footer">
+            <p>Dibuat untuk Simulasi Pembelajaran Pertanian Digital, Peternakan & Agroteknologi Sekolah.</p>
+        </footer>
+    </main>
+
+    <!-- ====================================================================
+         2. GAME 3D SCREEN (SIMULATOR TIGA DIMENSI)
+         ==================================================================== -->
+    <section id="gameScreen" style="display:none;">
+        <!-- Canvas Wadah Three.js -->
+        <div id="canvasContainer"></div>
+
+        <!-- HUD Atas Layar Game -->
+        <header class="game-hud-top">
+            <div class="hud-group-left">
+                <button class="hud-btn" onclick="window.showHome()" title="Kembali ke Beranda">
+                    🏠 Beranda
+                </button>
+                <div class="hud-pill" title="Koin Kebun">
+                    🪙 <span id="hudCoins">200</span>
+                </div>
+                <div class="hud-pill" title="Level Pemain">
+                    ⭐ Lv.<span id="hudLevel">1</span>
+                </div>
+                <div class="hud-pill hud-xp-box" title="Progress XP Pemain">
+                    <div class="hud-xp-label">
+                        <span>XP</span>
+                        <span id="hudXpText">0 / 100 XP</span>
+                    </div>
+                    <div class="hud-xp-bar-bg">
+                        <div id="hudXpBar" class="hud-xp-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hud-group-right">
+                <!-- Benih Aktif Dipilih -->
+                <div class="hud-pill" title="Benih yang sedang dipilih untuk ditanam">
+                    <span id="hudSeedEmoji">🥬</span>
+                    <span id="hudSeedName">Selada</span>
+                    <span style="font-weight:400; color:#555;">(x<span id="hudSeedCount">5</span>)</span>
+                </div>
+
+                <!-- Pengatur Cuaca 3D -->
+                <div class="weather-selector" title="Ganti Cuaca Dunia 3D">
+                    <button class="weather-btn active" data-weather="cerah" onclick="window.toggleWeather('cerah')" title="Cerah">☀️</button>
+                    <button class="weather-btn" data-weather="hujan" onclick="window.toggleWeather('hujan')" title="Hujan">🌧️</button>
+                    <button class="weather-btn" data-weather="malam" onclick="window.toggleWeather('malam')" title="Malam">🌙</button>
+                </div>
+
+                <!-- Tombol-tombol HUD Aksi -->
+                <button class="hud-btn" onclick="window.openPanel('inventoryModal')" title="Buka Tas / Inventori">
+                    🎒 Tas
+                </button>
+                <button class="hud-btn" onclick="window.openPanel('animalStatusModal')" title="Status Hewan Ternak">
+                    🐄 Ternak
+                </button>
+                <button class="hud-btn" onclick="window.openPanel('storeModal')" title="Buka Toko Benih & Pakan">
+                    🏪 Toko
+                </button>
+                <button class="hud-btn" onclick="window.openPanel('marketModal')" title="Buka Pasar Jual Hasil Panen">
+                    🛒 Pasar
+                </button>
+
+                <!-- Tombol Audio -->
+                <button class="sound-toggle-btn" onclick="window.toggleSound()" title="Nyalakan/Matikan Suara">
+                    🔊
+                </button>
+            </div>
+        </header>
+
+        <!-- Minimap 2D Overlay -->
+        <aside class="minimap-wrapper">
+            <div class="minimap-title">🗺️ Peta Dunia</div>
+            <canvas id="minimapCanvas" width="180" height="180"></canvas>
+            <div class="camera-control-hint">🖱️ Mouse 360° • [ESC] Kursor</div>
+        </aside>
+
+        <!-- PROMPT INTERAKSI SANGAT PENTING [E] / [SPACE] -->
+        <div id="interactionPrompt">
+            <div id="promptStatus" class="prompt-status">🌱 Tanah kosong</div>
+            <div id="promptAction" class="prompt-action ready">[E] Tanam Selada</div>
+        </div>
+
+        <!-- Virtual Joystick & Tombol Aksi Mobile -->
+        <div id="mobileControlsContainer">
+            <div id="joystickZone">
+                <div id="joystickKnob"></div>
+            </div>
+            <button id="mobileActionBtn" title="Tombol Interaksi (E)">
+                <span>[E]</span>
+                <span style="font-size:0.65rem;">AKSI</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         3. MODAL: AI DOKTER TANAMAN
+         ==================================================================== -->
+    <div id="aiPanel" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">🤖</span>
+                    <h2 class="modal-title">Dokter Tanaman</h2>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;">
+                    Unggah atau ambil foto daun tanaman untuk menganalisis tanda penyakit, bercak jamur, klorosis, atau memeriksa kesegarannya.
+                </p>
+
+                <!-- Area Unggah Foto -->
+                <div id="aiDropArea" class="ai-upload-zone" onclick="document.getElementById('aiImageUpload').click()">
+                    <input type="file" id="aiImageUpload" accept="image/*" style="display:none;">
+                    <div id="aiPreviewPlaceholder" class="ai-upload-placeholder">
+                        <span class="ai-upload-icon">📷</span>
+                        <strong>Klik atau seret foto daun ke sini</strong>
+                        <small>Format didukung: JPG, PNG, WEBP</small>
+                    </div>
+                    <img id="aiPreviewImage" alt="Preview Daun Tanaman">
+                </div>
+
+                <!-- Tombol Sampel Uji Cepat -->
+                <div class="sample-leaf-row">
+                    <span class="sample-label">Uji Sampel Model:</span>
+                    <button class="btn-sample-leaf" onclick="window.aiDoctor.loadSampleLeaf('healthy')" title="Uji Daun Sehat">
+                        🍃 SEHAT
+                    </button>
+                    <button class="btn-sample-leaf" onclick="window.aiDoctor.loadSampleLeaf('kering')" title="Uji Daun Kering">
+                        🍂 KERING
+                    </button>
+                    <button class="btn-sample-leaf" onclick="window.aiDoctor.loadSampleLeaf('busuk')" title="Uji Daun Busuk">
+                        🍄 BUSUK
+                    </button>
+                    <button class="btn-sample-leaf" onclick="window.aiDoctor.loadSampleLeaf('layu')" title="Uji Daun Layu">
+                        🥀 LAYU
+                    </button>
+                </div>
+
+                <!-- Tombol Eksekusi Analisis -->
+                <button id="aiAnalyzeBtn" class="btn-primary-analyze" disabled>
+                    🔍 Analisis Tanaman
+                </button>
+
+                <!-- Kartu Hasil Diagnosa AI -->
+                <div id="aiResultCard" class="ai-result-card">
+                    <div id="aiResultBadge" class="status-badge healthy">KONDISI SEGAR / SEHAT</div>
+                    <h3 id="aiResultTitle" class="ai-result-title">Hasil Diagnosa</h3>
+                    <p id="aiResultSubtitle" class="ai-result-subtitle">Keterangan hasil analisis</p>
+
+                    <!-- Confidence Meter -->
+                    <div class="confidence-box">
+                        <div class="confidence-meta">
+                            <span>Tingkat Keyakinan (Confidence)</span>
+                            <span id="aiConfidenceText">0%</span>
+                        </div>
+                        <div class="confidence-meter-bg">
+                            <div id="aiConfidenceBar" class="confidence-meter-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Gejala -->
+                    <h4 class="ai-section-title">🔍 Indikasi Gejala Terdeteksi:</h4>
+                    <ul id="aiSymptomsList" class="ai-list"></ul>
+
+                    <!-- Saran Tindakan -->
+                    <h4 class="ai-section-title">💡 Rekomendasi Penanganan:</h4>
+                    <ul id="aiRecList" class="ai-list"></ul>
+
+                    <!-- Catatan & Transparansi Model -->
+                    <div id="aiDisclaimer" class="ai-disclaimer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         4. MODAL: BELAJAR TANAMAN & KUIS INTERAKTIF
+         ==================================================================== -->
+    <div id="learnPanel" class="modal-overlay">
+        <div class="modal-dialog modal-dialog-lg">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">📚</span>
+                    <div>
+                        <h2 class="modal-title">Pusat Belajar Botani & Ensiklopedia</h2>
+                        <small style="color:var(--primary-green); font-weight:600;">Sistem Edukasi Interaktif Pertanian Digital</small>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Navigasi Tab Utama -->
+                <div class="tabs-header">
+                    <button id="tabBtnMateri" class="tab-btn active" onclick="switchLearnTab('materi')">
+                        📖 Modul & Ensiklopedia Tanaman
+                    </button>
+                    <button id="tabBtnKuis" class="tab-btn" onclick="switchLearnTab('kuis')">
+                        🎯 Kuis Sains Tanaman (+XP)
+                    </button>
+                </div>
+
+                <!-- Tab 1: Materi Pembelajaran -->
+                <div id="tabContentMateri" class="tab-pane active">
+                    <!-- Progress Belajar Gamifikasi -->
+                    <div class="learn-progress-banner">
+                        <div class="learn-progress-header">
+                            <span style="font-weight:700;">🏆 Progress Belajar Siswa</span>
+                            <span id="learnProgressText" style="font-weight:700; color:var(--primary-dark);">0 / 36 Materi</span>
+                        </div>
+                        <div class="learn-progress-bg">
+                            <div id="learnProgressBar" class="learn-progress-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Pencarian Cepat -->
+                    <div class="learn-search-box">
+                        <span class="learn-search-icon">🔍</span>
+                        <input type="text" id="learnSearchInput" class="learn-search-input" 
+                               placeholder="Cari materi, hama, atau tanaman (contoh: fotosintesis, kentang, kutu daun, etiolasi)..."
+                               oninput="window.appState.searchLearnMaterials(this.value)">
+                    </div>
+
+                    <!-- Kategori Filter Pills -->
+                    <div class="learn-categories-bar" role="tablist">
+                        <button class="learn-cat-btn active" data-cat="all" onclick="window.appState.setLearnCategory('all')">
+                            🌟 Semua Materi
+                        </button>
+                        <button class="learn-cat-btn" data-cat="dasar" onclick="window.appState.setLearnCategory('dasar')">
+                            🌱 Dasar Tanaman
+                        </button>
+                        <button class="learn-cat-btn" data-cat="perawatan" onclick="window.appState.setLearnCategory('perawatan')">
+                            💧 Perawatan
+                        </button>
+                        <button class="learn-cat-btn" data-cat="hama" onclick="window.appState.setLearnCategory('hama')">
+                            🐛 Hama & Penyakit
+                        </button>
+                        <button class="learn-cat-btn" data-cat="tanaman" onclick="window.appState.setLearnCategory('tanaman')">
+                            🌾 10 Jenis Tanaman
+                        </button>
+                        <button class="learn-cat-btn" data-cat="ai" onclick="window.appState.setLearnCategory('ai')">
+                            🤖 AI & Pertanian
+                        </button>
+                        <button class="learn-cat-btn highlight-quiz" onclick="switchLearnTab('kuis')">
+                            🎯 Kuis (+XP)
+                        </button>
+                    </div>
+
+                    <!-- Sub-Toolbar: Status Jumlah & Aksi Ringkas/Buka Cepat -->
+                    <div class="learn-sub-toolbar">
+                        <span id="learnFilterCount" class="learn-count-label">Menampilkan 36 Materi Botani</span>
+                        <div class="learn-batch-actions">
+                            <button class="btn-sub-tool" onclick="window.appState.toggleAllModules(true)">
+                                📂 Buka Semua Detail
+                            </button>
+                            <button class="btn-sub-tool" onclick="window.appState.toggleAllModules(false)">
+                                📁 Ringkas Semua
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Daftar Modul Materi Pembelajaran -->
+                    <div id="learningModulesContainer" class="learning-modules-list"></div>
+                </div>
+
+                <!-- Tab 2: Kuis Interaktif -->
+                <div id="tabContentKuis" class="tab-pane">
+                    <!-- Pertanyaan Kuis Aktif -->
+                    <div id="quizQuestionCard" class="quiz-card">
+                        <div id="quizCounter" class="quiz-counter">Pertanyaan 1 dari 8</div>
+                        <h3 id="quizQuestionText" class="quiz-question-text">Soal Kuis</h3>
+                        
+                        <div id="quizOptionsList" class="quiz-options-list"></div>
+                        <div id="quizFeedback" class="quiz-feedback"></div>
+                        
+                        <button id="quizNextBtn" class="btn-quiz-next">
+                            Pertanyaan Selanjutnya ➔
+                        </button>
+                    </div>
+
+                    <!-- Ringkasan Hasil Kuis -->
+                    <div id="quizResultSummary" class="quiz-result-summary">
+                        <span style="font-size:3.5rem;">🎉</span>
+                        <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-dark);">Kuis Selesai!</h3>
+                        <div id="quizFinalScore" class="quiz-score-badge">8 / 8</div>
+                        <p id="quizEarnedXp" style="font-weight:700; color:var(--primary-green); margin-bottom:16px;">+80 XP Diperoleh!</p>
+                        <button class="btn-submit-task" onclick="window.appState.initQuiz()">
+                            🔄 Ulangi Kuis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         5. MODAL: JADWAL PERAWATAN KEBUN
+         ==================================================================== -->
+    <div id="schedulePanel" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">📅</span>
+                    <h2 class="modal-title">Jadwal Perawatan Kebun</h2>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulir Tambah Jadwal Baru -->
+                <form id="scheduleForm" class="schedule-form">
+                    <div class="form-row">
+                        <input type="text" id="taskTitle" class="form-input" placeholder="Nama tugas (contoh: Menyiram Selada)" required>
+                        <input type="date" id="taskDate" class="form-input" required>
+                        <input type="time" id="taskTime" class="form-input" value="07:00" required>
+                        <button type="submit" class="btn-submit-task">+ Tambah</button>
+                    </div>
+                </form>
+
+                <!-- Daftar Tugas -->
+                <div id="scheduleList" class="schedule-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         6. MODAL: TOKO BENIH & PAKAN (STORE MODAL)
+         ==================================================================== -->
+    <div id="storeModal" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">🏪</span>
+                    <h2 class="modal-title">Toko Kebun Pintar</h2>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="shop-header-status">
+                    <span>🪙 Saldo Koin: <strong id="shopCoinsDisplay">200</strong></span>
+                    <small>Beli benih dan pakan untuk ternak Anda!</small>
+                </div>
+                <div id="seedShopGrid" class="seed-shop-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         7. MODAL: TAS / INVENTORI (INVENTORY MODAL)
+         ==================================================================== -->
+    <div id="inventoryModal" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">🎒</span>
+                    <h2 class="modal-title">Tas / Inventori Pemain</h2>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body" id="inventoryModalBody">
+                <!-- Diisi secara dinamis oleh appState.renderInventoryModal() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         8. MODAL: STATUS HEWAN TERNAK (ANIMAL STATUS MODAL)
+         ==================================================================== -->
+    <div id="animalStatusModal" class="modal-overlay">
+        <div class="modal-dialog modal-dialog-lg">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">🐄</span>
+                    <h2 class="modal-title">Status Hewan Peternakan</h2>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body" id="animalStatusBody">
+                <!-- Diisi secara dinamis oleh appState.renderAnimalStatusModal() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         9. MODAL: PASAR JUAL PRODUK (MARKET MODAL)
+         ==================================================================== -->
+    <div id="marketModal" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">🛒</span>
+                    <h2 class="modal-title">Pasar Desa (Jual Hasil Panen)</h2>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="shop-header-status">
+                    <span>🪙 Saldo Koin: <strong id="marketCoins">200</strong></span>
+                    <small>Jual hasil panen dan produk hewani untuk memperoleh koin!</small>
+                </div>
+                <div id="marketBody" class="market-list">
+                    <!-- Diisi secara dinamis oleh appState.renderMarketModal() -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         10. MODAL: PAPAN QUEST (QUEST BOARD MODAL)
+         ==================================================================== -->
+    <div id="questBoardModal" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">📋</span>
+                    <h2 class="modal-title">Papan Quest Desa</h2>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:12px;">
+                    Selesaikan tugas harian dari warga desa untuk mendapatkan hadiah Koin dan XP!
+                </p>
+                <div id="questBoardBody" class="quest-list">
+                    <!-- Diisi secara dinamis oleh appState.renderQuestBoard() -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         11. MODAL: DIALOG NPC (NPC DIALOG MODAL)
+         ==================================================================== -->
+    <div id="npcDialogModal" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">💬</span>
+                    <div>
+                        <h2 id="npcDialogName" class="modal-title">Warga Desa</h2>
+                        <small id="npcDialogRole" style="color:var(--primary-green); font-weight:600;">Penduduk</small>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="npc-bubble">
+                    <p id="npcDialogText">Halo, petani muda! Selamat datang di Kebun Pintar.</p>
+                </div>
+                <button class="btn-primary-analyze" onclick="window.closePanels()" style="margin-top:16px;">
+                    Tutup Percakapan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         12. MODAL: PERAYAAN LEVEL UP!
+         ==================================================================== -->
+    <div id="levelUpModal" class="modal-overlay">
+        <div class="modal-dialog level-up-dialog">
+            <div class="level-up-icon">🎉</div>
+            <h2 class="level-up-title">LEVEL UP!</h2>
+            <p id="levelUpText" class="level-up-text">Selamat! Kamu mencapai Level 2.</p>
+            <div id="levelUpBonusText" class="level-up-bonus">Bonus: +50 Koin 🪙</div>
+            <button class="btn-primary-analyze" onclick="document.getElementById('levelUpModal').classList.remove('active')">
+                Lanjutkan Berkebun ➔
+            </button>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         13. MODAL: TOKO & PASAR JUAL-BELI BU DEWI (MERCHANT MODAL)
+         ==================================================================== -->
+    <div id="merchantModal" class="modal-overlay">
+        <div class="modal-dialog modal-dialog-lg">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">🛍️</span>
+                    <div>
+                        <h2 class="modal-title">Kios & Toko Bu Dewi</h2>
+                        <small style="color:var(--primary-green); font-weight:600;">Pedagang Toko & Pasar Rakyat Desa Kebun Pintar</small>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Status Saldo Pemain -->
+                <div class="merchant-status-bar">
+                    <div class="merchant-wallet">
+                        <span>🪙 Saldo Koin:</span>
+                        <strong id="merchantCoinsDisplay">200</strong>
+                    </div>
+                    <div class="merchant-speech">
+                        <span>💬 "Selamat datang! Silakan beli bibit unggul, pakan ternak, atau jual hasil kebunmu ke saya."</span>
+                    </div>
+                </div>
+
+                <!-- Navigasi Tab: Beli vs Jual -->
+                <div class="tabs-header merchant-tabs">
+                    <button id="tabBtnMerchantBuy" class="tab-btn active" onclick="window.appState.switchMerchantTab('buy')">
+                        🛒 Menu Beli (Bibit, Pakan & Alat)
+                    </button>
+                    <button id="tabBtnMerchantSell" class="tab-btn" onclick="window.appState.switchMerchantTab('sell')">
+                        💰 Menu Jual (Hasil Panen & Hewani)
+                    </button>
+                </div>
+
+                <!-- Tab 1: Menu Beli -->
+                <div id="merchantTabBuy" class="tab-pane active">
+                    <!-- Kategori Filter Tab Beli -->
+                    <div class="merchant-filter-bar">
+                        <button class="merchant-filter-btn active" data-cat="all" onclick="window.appState.filterMerchantBuy('all')">🌟 Semua Barang</button>
+                        <button class="merchant-filter-btn" data-cat="seed" onclick="window.appState.filterMerchantBuy('seed')">🌱 Bibit Tanaman</button>
+                        <button class="merchant-filter-btn" data-cat="feed" onclick="window.appState.filterMerchantBuy('feed')">🌾 Pakan Ternak</button>
+                        <button class="merchant-filter-btn" data-cat="supply" onclick="window.appState.filterMerchantBuy('supply')">🧪 Pupuk & Kebutuhan</button>
+                    </div>
+                    <div id="merchantBuyGrid" class="merchant-grid"></div>
+                </div>
+
+                <!-- Tab 2: Menu Jual -->
+                <div id="merchantTabSell" class="tab-pane">
+                    <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:12px;">
+                        Jual hasil panen sayuran, buah, dan produk hewani dari tasmu untuk mendapatkan Koin!
+                    </p>
+                    <div id="merchantSellList" class="merchant-sell-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         14. MODAL: WORKSHOP & BENGKEL PAK JOKO (CRAFTING MODAL)
+         ==================================================================== -->
+    <div id="craftingModal" class="modal-overlay">
+        <div class="modal-dialog modal-dialog-lg">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">🔨</span>
+                    <div>
+                        <h2 class="modal-title">Bengkel Kerajinan & Workshop Pak Joko</h2>
+                        <small style="color:var(--primary-green); font-weight:600;">Pandai Besi & Pengrajin Peralatan Desa</small>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="crafting-intro-bar">
+                    <p>🔨 <em>"Halo petani muda! Bawa hasil kebun dan ternakmu ke sini, kita olah menjadi pupuk berkualitas tinggi, pakan konsentrat, atau upgrade peralatanmu!"</em></p>
+                </div>
+                <div id="craftingRecipesContainer" class="crafting-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         15. MODAL: EDUKASI & TIPS MAS DANU (NPC GUIDE MODAL)
+         ==================================================================== -->
+    <div id="npcGuideModal" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon">💡</span>
+                    <div>
+                        <h2 id="npcGuideTitle" class="modal-title">Tips & Konsultasi Mas Danu</h2>
+                        <small id="npcGuideSubtitle" style="color:var(--primary-green); font-weight:600;">Peternak Ahli & Sahabat Petani Desa</small>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="window.closePanels()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="guide-topics-nav" id="npcGuideTopicNav"></div>
+                <div class="guide-content-box" id="npcGuideContent"></div>
+                <div class="guide-footer-actions">
+                    <button id="btnClaimGuideXp" class="btn-sub-tool" onclick="window.appState.claimGuideBonusXp()">
+                        🎓 Klaim Pemahaman Materi (+10 XP)
+                    </button>
+                    <button class="btn-primary-analyze" onclick="window.closePanels()" style="margin-top:10px;">
+                        Tutup Percakapan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wadah Pesan Mengambang (Floating Toast) -->
+    <div id="toastContainer"></div>
+
+    <!-- ====================================================================
+         URUTAN SCRIPT (SESUAI ATURAN DEPENDENCY WAJIB)
+         1. Three.js r128
+         2. TensorFlow.js v3.18
+         3. Teachable Machine Image v0.8.5
+         4. js/audio.js
+         5. js/plants.js
+         6. js/animals.js
+         7. js/npc.js     <-- SISTEM NPC 3D HIDUP & FUNGSIONAL
+         8. js/player.js
+         9. js/world3d.js
+         10. js/ai.js
+         11. js/schedule.js
+         12. js/app.js
+         ==================================================================== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+
+    <script src="js/audio.js"></script>
+    <script src="js/plants.js"></script>
+    <script src="js/animals.js"></script>
+    <script src="js/npc.js"></script>
+    <script src="js/billboard.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/world3d.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/schedule.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Helper interaksi Tab di Belajar Tanaman
+        function switchLearnTab(tabName) {
+            const tabMateri = document.getElementById('tabContentMateri');
+            const tabKuis = document.getElementById('tabContentKuis');
+            const btnMateri = document.getElementById('tabBtnMateri');
+            const btnKuis = document.getElementById('tabBtnKuis');
+
+            if (tabName === 'materi') {
+                tabMateri.classList.add('active');
+                tabKuis.classList.remove('active');
+                btnMateri.classList.add('active');
+                btnKuis.classList.remove('active');
+            } else {
+                tabMateri.classList.remove('active');
+                tabKuis.classList.add('active');
+                btnMateri.classList.remove('active');
+                btnKuis.classList.add('active');
+            }
+            if (window.appAudio) window.appAudio.play('click');
+        }
+    </script>
+</body>
+</html>
